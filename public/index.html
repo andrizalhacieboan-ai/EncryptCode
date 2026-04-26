@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encrypt Code Andri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700;900&family=JetBrains+Mono&display=swap');
+
+        :root {
+            --accent: #00f2ff;
+            --danger: #ff003c;
+            --bg-deep: #050505;
+            --panel: #0d0d0d;
+        }
+
+        /* --- Keamanan Ekstrem: Anti-Select Text --- */
+        body {
+            background-color: var(--bg-deep);
+            color: #e2e8f0;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        textarea, input, code {
+            -webkit-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        .reactyl-border {
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .reactyl-border:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+        }
+
+        .glow-text { text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); }
+
+        .scanline {
+            width: 100%; height: 100px; z-index: 9999;
+            background: linear-gradient(0deg, rgba(0, 242, 255, 0.03) 0%, rgba(0, 242, 255, 0) 100%);
+            position: fixed; bottom: 100%;
+            animation: scan 4s linear infinite; pointer-events: none;
+        }
+
+        @keyframes scan { 0% { bottom: 100%; } 100% { bottom: -100px; } }
+
+        .nav-link {
+            position: relative; color: #64748b; cursor: pointer; transition: color 0.3s;
+            text-transform: uppercase; font-size: 11px; font-weight: bold; letter-spacing: 0.1em;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--accent); }
+        .nav-link::after {
+            content: ''; position: absolute; left: 0; bottom: -4px; width: 0; height: 1px;
+            background-color: var(--accent); transition: width 0.3s;
+        }
+        .nav-link.active::after { width: 100%; }
+
+        /* Layar Peringatan */
+        #kill-switch-screen {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050000; z-index: 999999; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+        }
+        .alert-glitch {
+            color: var(--danger); font-size: 4rem; font-weight: 900; letter-spacing: 5px;
+            text-shadow: 0 0 20px rgba(255, 0, 60, 0.8); animation: pulseAlert 1s infinite;
+        }
+        @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+
+    
+    <!--  SECURITY  -->
+    
+    <script>
+        (function() {
+            "use strict";
+
+            // Fungsi Hancurkan Tampilan
+            function triggerKillSwitch(reason) {
+                document.body.innerHTML = `
+                    <div id="kill-switch-screen" style="display: flex;">
+                        <i class="fa-solid fa-skull-crossbones alert-glitch mb-6"></i>
+                        <h1 class="alert-glitch">ACCESS DENIED</h1>
+                        <h2 class="text-white text-2xl mt-4 font-mono">SYSTEM DETECTED</h2>
+                        <div class="mt-8 border border-red-500 bg-red-950 p-6 max-w-lg">
+                            <p class="text-red-400 font-mono text-sm mb-2">> PELANGGARAN TERDETEKSI:</p>
+                            <p class="text-white font-mono text-lg">${reason}</p>
+                            <p class="text-red-500 font-mono text-xs mt-6">> TINDAKAN ILEGAL TEREKAM. KONEKSI DIPUTUS.</p>
+                        </div>
+                    </div>
+                `;
+                throw new Error("SEC_HALT: " + reason);
+            }
+
+            // 1. Anti Right-Click & Keyboard Hook
+            document.addEventListener('contextmenu', e => { e.preventDefault(); triggerKillSwitch("Klik Kanan (Context Menu) Tidak Diizinkan."); });
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && ['U','S'].includes(e.key))) {
+                    e.preventDefault(); triggerKillSwitch("Penggunaan Developer Tools Dilarang.");
+                }
+            });
+
+            // 2. Anti DevTools & Debugger Timing
+            setInterval(() => {
+                const threshold = 160;
+                const isMobile = window.innerWidth <= 768; 
+                if ((window.outerWidth - window.innerWidth > threshold) || (!isMobile && window.outerHeight - window.innerHeight > threshold)) {
+                    triggerKillSwitch("Inspeksi Elemen Terbuka.");
+                }
+                const start = performance.now();
+                debugger;
+                if (performance.now() - start > 150) triggerKillSwitch("Debugger Intersepsi Terdeteksi.");
+            }, 1000);
+
+            // 3. Integrity Shield
+            const secureCore = () => "ANDRI_SECU_V1";
+            const hash = btoa(secureCore.toString());
+            setInterval(() => {
+                if(btoa(secureCore.toString()) !== hash) triggerKillSwitch("Integritas Sistem Dimodifikasi.");
+                console.clear();
+                console.log("%c[SECURE]%c Sistem Dilindungi oleh Andri Systems.", "background:#ff003c;color:#fff;padding:5px;font-weight:bold;", "color:#ff003c;");
+            }, 2000);
+        })();
+    </script>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <div class="scanline"></div>
+
+    <!-- NAVBAR -->
+    <nav class="border-b border-white/5 bg-[#050505]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-black border border-[var(--accent)] flex items-center justify-center rotate-45 group shadow-[0_0_10px_rgba(0,242,255,0.3)]">
+                    <i class="fa-solid fa-microchip text-[var(--accent)] -rotate-45 group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-[0.2em] text-white glow-text uppercase">Encrypt <span class="text-[var(--accent)]">CodeAndri</span></h1>
+                    <p class="text-[9px] text-[var(--accent)] uppercase tracking-widest mono">Subs Yt andristoreID</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-6 items-center">
+                <!-- Hanya 2 Navigasi utama -->
+                <span class="nav-link active" onclick="switchView('app')">Workspace</span>
+                <span class="nav-link" onclick="switchView('history')">Riwayat</span>
+                <div class="px-3 py-1 bg-green-950/30 border border-green-500/30 rounded text-[9px] mono text-green-500 flex items-center gap-2">
+                    <span class="animate-pulse">●</span> SECURITY
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl mx-auto w-full p-6 relative flex flex-col gap-16">
+        
+        
+        <!-- VIEW: APP / WORKSPACE -->
+        
+        <section id="view-app" class="view-section grid grid-cols-1 lg:grid-cols-12 gap-6 animate-[fadeIn_0.5s_ease-out]">
+            <!-- Sidebar Setup -->
+            <aside class="lg:col-span-3 flex flex-col gap-4">
+                <div class="bg-panel p-6 reactyl-border rounded-lg">
+                    <h3 class="text-xs font-bold text-[var(--accent)] mb-4 uppercase tracking-tighter"><i class="fa-solid fa-sliders mr-2"></i> Parameter</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[9px] text-slate-500 block mb-2 uppercase tracking-widest">Target</label>
+                            <div class="grid grid-cols-2 gap-2 bg-black p-1 rounded border border-white/5">
+                                <button onclick="setMode('js')" id="m-js" class="py-2 bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)] text-[10px] font-bold uppercase transition-all">JavaScript</button>
+                                <button onclick="setMode('html')" id="m-html" class="py-2 text-slate-500 text-[10px] font-bold uppercase hover:text-white transition-all">HTML</button>
+                            </div>
+                        </div>
+
+                        <div id="js-opts">
+                            <label class="text-[9px] text-slate-500 block mb-2 uppercase tracking-widest">Algoritma</label>
+                            <select id="e-type" class="w-full bg-black border border-white/10 p-2 text-xs text-white focus:border-[var(--accent)] outline-none rounded mono scrollbar-custom">
+                                <option value="andri">Andri Custom</option>
+                                <option value="quantum">Quantum Vortex</option>
+                                <option value="siu">Siu + Calcrick</option>
+                                <option value="nebula">Nebula Protocol</option>
+                                <option value="nova">Nova Structure</option>
+                                <option value="x">X Style</option>
+                                <option value="max">Max Intensity</option>
+                                <option value="strong">Strong Standard</option>
+                                <option value="big">Big Style</option>
+                                <option value="invis">Invisible Style</option>
+                                <option value="stealth">Stealth Style</option>
+                                <option value="custom">Custom Style</option>
+                                <option value="mandarin">Mandarin Obfs</option>
+                                <option value="arab">Arab Obfs</option>
+                                <option value="japanxarab">Japan x Arab Obfs</option>
+                                <option value="ultra">Ultra Obfuscation</option>
+                                <option value="japan">Japan Obfs</option>
+                                <option value="new">New Obfs</option>
+                            </select>
+                        </div>
+
+                        <div id="drop-zone" class="border border-dashed border-white/20 p-6 text-center cursor-pointer hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 rounded transition-all">
+                            <input type="file" id="f-input" class="hidden" accept=".js,.html,.txt">
+                            <div id="upload-ui">
+                                <i class="fa-solid fa-cloud-arrow-up text-xl text-slate-400 mb-3 block"></i>
+                                <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Drag File / Klik</p>
+                            </div>
+                            <div id="file-ui" class="hidden flex items-center justify-between bg-black px-3 py-2 rounded border border-white/10">
+                                <span id="f-name" class="text-[10px] text-[var(--accent)] mono truncate"></span>
+                                <i class="fa-solid fa-times text-red-500 hover:text-red-400 ml-2" onclick="clearFile(event)"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Editor -->
+            <div class="lg:col-span-9 flex flex-col gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[450px]">
+                    <div class="bg-panel reactyl-border rounded-lg flex flex-col overflow-hidden">
+                        <div class="px-4 py-2 border-b border-white/5 bg-black/50 flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-code text-[var(--accent)] mr-2"></i> Input</span>
+                            <button onclick="clearEditor()" class="text-[9px] text-slate-500 hover:text-red-400 transition-colors uppercase">Clear</button>
+                        </div>
+                        <textarea id="inp" spellcheck="false" class="flex-1 bg-transparent p-4 mono text-xs text-slate-300 resize-none outline-none" placeholder="// Masukkan kode asli di sini..."></textarea>
+                    </div>
+
+                    <div class="bg-panel reactyl-border rounded-lg flex flex-col overflow-hidden border-t-2 border-t-[var(--accent)]">
+                        <div class="px-4 py-2 border-b border-[var(--accent)]/20 bg-[var(--accent)]/5 flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-[var(--accent)] uppercase tracking-widest"><i class="fa-solid fa-shield-halved mr-2"></i> Output</span>
+                            <button onclick="copyOut()" class="text-[9px] bg-[var(--accent)] text-black px-2 py-1 rounded font-bold hover:bg-white transition-colors uppercase">Copy</button>
+                        </div>
+                        <textarea id="out" readonly spellcheck="false" class="flex-1 bg-transparent p-4 mono text-xs text-[var(--accent)] resize-none outline-none" placeholder="// Hasil eksekusi dari backend (server.js) akan muncul di sini..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-4 mt-2">
+                    <button onclick="runProcess('decrypt')" id="btn-decrypt" class="px-8 py-3 bg-black border border-white/20 text-white rounded text-[11px] font-bold uppercase tracking-widest hover:border-[var(--accent)] transition-all">
+                        <i class="fa-solid fa-unlock-keyhole mr-2"></i> Decrypt
+                    </button>
+                    <button onclick="runProcess('encrypt')" id="btn-encrypt" class="px-10 py-3 bg-[var(--accent)] text-black rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(0,242,255,0.3)] hover:scale-105 transition-all">
+                        <i class="fa-solid fa-microchip mr-2"></i> Encrypt Code
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        
+        <!-- VIEW: HISTORY -->
+        
+        <section id="view-history" class="view-section hidden animate-[fadeIn_0.5s_ease-out]">
+            <div class="bg-panel reactyl-border p-6 rounded-lg min-h-[500px]">
+                <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+                    <div>
+                        <h2 class="text-xl font-bold text-[var(--accent)] uppercase tracking-widest glow-text">Log Aktivitas</h2>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Riwayat enkripsi disimpan secara lokal.</p>
+                    </div>
+                    <button onclick="clearHistory()" class="px-4 py-2 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase hover:bg-red-500/10 rounded transition-all">
+                        <i class="fa-solid fa-trash mr-2"></i> Hapus Semua
+                    </button>
+                </div>
+
+                <div id="history-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- History cards will be injected here via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Garis Pemisah untuk bagian Statis bawah -->
+        <hr class="border-white/10 w-full mt-4">
+
+        
+        <!-- STATIC SECTION -->
+        
+        <section id="section-docs" class="animate-[fadeIn_0.5s_ease-out]">
+            <div class="bg-panel reactyl-border p-6 md:p-10 rounded-lg">
+                <h2 class="text-2xl font-bold text-[var(--accent)] uppercase tracking-widest glow-text mb-2"><i class="fa-solid fa-book-journal-whills mr-3"></i> API Documentation</h2>
+                <p class="text-sm text-slate-400 mb-8 border-l-2 border-[var(--accent)] pl-4">Integrasikan layanan enkripsi Andri Systems langsung ke dalam backend Anda.</p>
+
+                <div class="space-y-8">
+                    <div>
+                        <div class="flex items-center gap-4 mb-4">
+                            <span class="bg-green-500 text-black font-bold px-3 py-1 rounded text-xs">POST</span>
+                            <code class="text-lg text-[var(--accent)] mono">/api/process</code>
+                        </div>
+                        <p class="text-sm text-slate-300 mb-4">Endpoint utama untuk melakukan Obfuscation atau Dekripsi kode secara remote.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-black p-4 rounded border border-white/5">
+                                <h4 class="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-bold">Request Body (JSON)</h4>
+                                <pre class="text-[11px] mono text-green-400">
+{
+  "action": "encrypt", // atau "decrypt"
+  "mode": "js", // atau "html"
+  "type": "andri", // quantum, nebula, nova, dll
+  "code": "console.log('Hello');"
+}</pre>
+                            </div>
+                            <div class="bg-black p-4 rounded border border-white/5">
+                                <h4 class="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-bold">CURL Example</h4>
+                                <pre class="text-[11px] mono text-slate-300">
+curl -X POST https://domain-anda.vercel.app/api/process \
+-H "Content-Type: application/json" \
+-d '{"action":"encrypt", "mode":"js", "type":"quantum", "code":"alert(1);"}'</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
+        <!-- STATIC SECTION -->
+        
+        <section id="section-contact" class="animate-[fadeIn_0.5s_ease-out] mb-10">
+            <div class="flex items-center justify-center">
+                <div class="bg-panel reactyl-border p-10 rounded-lg max-w-2xl w-full text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-50"></div>
+                    
+                    <div class="w-20 h-20 bg-black border-2 border-[var(--accent)] rounded-full mx-auto flex items-center justify-center shadow-[0_0_20px_rgba(0,242,255,0.2)] mb-6">
+                        <i class="fa-solid fa-user-astronaut text-3xl text-[var(--accent)]"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-white uppercase tracking-widest mb-2">Andri <span class="text-[var(--accent)]">Developer</span></h2>
+                    <p class="text-xs text-slate-400 mb-8 tracking-widest">SECURITY ARCHITECT & JAVASCRIPT ENGINEER</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <a href="https://wa.me/6281934874758" target="_blank" class="flex items-center justify-center gap-4 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366] hover:text-white py-4 rounded transition-all group">
+                            <i class="fa-brands fa-whatsapp text-2xl group-hover:scale-125 transition-transform"></i>
+                            <span class="font-bold tracking-widest text-sm uppercase">Chat WhatsApp</span>
+                        </a>
+                        
+                        <a href="https://t.me/andribotmd" target="_blank" class="flex items-center justify-center gap-4 bg-[#0088cc]/10 border border-[#0088cc]/30 text-[#0088cc] hover:bg-[#0088cc] hover:text-white py-4 rounded transition-all group">
+                            <i class="fa-brands fa-telegram text-2xl group-hover:scale-125 transition-transform"></i>
+                            <span class="font-bold tracking-widest text-sm uppercase">Join Telegram</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-10 right-10 bg-[var(--accent)] text-black px-6 py-3 rounded text-[11px] font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(0,242,255,0.4)] transition-all transform translate-y-20 opacity-0 z-50 flex items-center gap-3 pointer-events-none">
+        <i class="fa-solid fa-circle-info"></i> <span id="toast-msg">Notifikasi</span>
+    </div>
+
+    
+    <!-- JAVASCRIPT LOGIC -->
+    
+    <script>
+        let currentMode = 'js';
+
+        // --- Routing / View Switching ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (viewId === 'history') renderHistory();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- Notification System ---
+        function notify(msg, isError = false) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.className = `fixed bottom-10 right-10 px-6 py-3 rounded text-[11px] font-bold uppercase tracking-widest transition-all transform translate-y-0 opacity-100 z-50 flex items-center gap-3 ${isError ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(255,0,0,0.4)]' : 'bg-[var(--accent)] text-black shadow-[0_0_20px_rgba(0,242,255,0.4)]'}`;
+            
+            setTimeout(() => { t.classList.add('translate-y-20', 'opacity-0'); }, 3000);
+        }
+
+        // --- Editor & File Logic ---
+        function setMode(m) {
+            currentMode = m;
+            const btnJs = document.getElementById('m-js');
+            const btnHtml = document.getElementById('m-html');
+            const jsOpts = document.getElementById('js-opts');
+
+            if (m === 'js') {
+                btnJs.className = 'py-2 bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)] text-[10px] font-bold uppercase transition-all';
+                btnHtml.className = 'py-2 text-slate-500 text-[10px] font-bold uppercase hover:text-white transition-all';
+                jsOpts.style.opacity = '1'; jsOpts.style.pointerEvents = 'auto';
+            } else {
+                btnHtml.className = 'py-2 bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)] text-[10px] font-bold uppercase transition-all';
+                btnJs.className = 'py-2 text-slate-500 text-[10px] font-bold uppercase hover:text-white transition-all';
+                jsOpts.style.opacity = '0.3'; jsOpts.style.pointerEvents = 'none';
+            }
+        }
+
+        function clearEditor() {
+            document.getElementById('inp').value = ""; document.getElementById('out').value = ""; clearFile(new Event('click'));
+        }
+
+        function copyOut() {
+            const out = document.getElementById('out');
+            if(!out.value) return notify("Output Kosong!", true);
+            out.select(); document.execCommand('copy'); notify("KODE BERHASIL DISALIN");
+        }
+
+        // Drag & Drop File
+        const dz = document.getElementById('drop-zone');
+        const fi = document.getElementById('f-input');
+        const fUI = document.getElementById('file-ui');
+        const upUI = document.getElementById('upload-ui');
+        
+        dz.onclick = () => fi.click();
+        fi.onchange = (e) => handleFile(e.target.files[0]);
+        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.borderColor = 'var(--accent)'; });
+        dz.addEventListener('dragleave', () => { dz.style.borderColor = ''; });
+        dz.addEventListener('drop', (e) => { e.preventDefault(); dz.style.borderColor = ''; handleFile(e.dataTransfer.files[0]); });
+
+        function handleFile(f) {
+            if(!f) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('inp').value = e.target.result;
+                document.getElementById('f-name').innerText = f.name;
+                upUI.classList.add('hidden'); fUI.classList.remove('hidden'); fUI.classList.add('flex');
+                
+                if(f.name.endsWith('.html')) setMode('html'); else setMode('js');
+                notify(`FILE ${f.name} DIMUAT`);
+            }
+            reader.readAsText(f);
+        }
+
+        function clearFile(e) {
+            e.stopPropagation(); fi.value = ""; fUI.classList.add('hidden'); fUI.classList.remove('flex'); upUI.classList.remove('hidden');
+        }
+
+        // --- History Logic ---
+        function saveHistory(action, type, inCode, outCode) {
+            const history = JSON.parse(localStorage.getItem('andri_history') || '[]');
+            const log = {
+                id: Date.now(), date: new Date().toLocaleString('id-ID'),
+                mode: currentMode, action: action, type: currentMode === 'js' ? type : 'HTML Encrypt',
+                previewIn: inCode.substring(0, 40) + '...', outCode: outCode
+            };
+            history.unshift(log);
+            if(history.length > 30) history.pop();
+            localStorage.setItem('andri_history', JSON.stringify(history));
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const history = JSON.parse(localStorage.getItem('andri_history') || '[]');
+            if(history.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500 font-mono text-xs">Belum ada riwayat aktivitas.</div>`; return;
+            }
+            container.innerHTML = history.map(item => `
+                <div class="bg-black border border-white/10 p-4 rounded flex flex-col hover:border-[var(--accent)]/50 transition-colors">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] bg-white/5 px-2 py-1 rounded text-white mono uppercase">${item.mode} • ${item.action}</span>
+                        <span class="text-[9px] text-slate-500">${item.date}</span>
+                    </div>
+                    <div class="text-[10px] text-[var(--accent)] mb-3 mono">${item.type}</div>
+                    <div class="text-[10px] text-slate-400 font-mono truncate border-t border-white/5 pt-2 mb-4">${item.previewIn.replace(/</g, "&lt;")}</div>
+                    <div class="mt-auto flex gap-2">
+                        <button onclick='loadHistoryOutput(${JSON.stringify(item.outCode).replace(/'/g, "\\'")})' class="flex-1 bg-white/5 hover:bg-white/10 text-white text-[9px] py-2 rounded font-bold uppercase transition-colors">View Output</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadHistoryOutput(code) {
+            switchView('app'); document.getElementById('out').value = code; notify("KODE DARI RIWAYAT DIMUAT");
+        }
+
+        function clearHistory() {
+            if(confirm('Hapus semua log secara permanen?')) {
+                localStorage.removeItem('andri_history'); renderHistory(); notify("RIWAYAT DIHAPUS");
+            }
+        }
+
+        
+        // INTEGRASI 
+        
+        async function runProcess(action) {
+            const input = document.getElementById('inp').value.trim();
+            const type = document.getElementById('e-type').value;
+            const out = document.getElementById('out');
+            const btnEncrypt = document.getElementById('btn-encrypt');
+            const btnDecrypt = document.getElementById('btn-decrypt');
+            
+            if (!input) return notify("Input Tidak Boleh Kosong!", true);
+
+            notify("MENGIRIM KE SERVER...");
+            out.value = "// Mengeksekusi protokol melalui Server Backend...\n// Mohon tunggu...";
+            btnEncrypt.disabled = true; btnDecrypt.disabled = true;
+
+            try {
+                // Melakukan POST request ke Backend Node.js
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: action,
+                        mode: currentMode,
+                        type: type,
+                        code: input
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success || response.ok) {
+                    const finalCode = data.result || data.code || data; 
+                    out.value = finalCode;
+                    saveHistory(action, type, input, finalCode);
+                    notify(`PROTOKOL SERVER ${action.toUpperCase()} SELESAI`);
+                } else {
+                    throw new Error(data.error || "Gagal memproses di server.");
+                }
+            } catch (err) {
+                console.error(err);
+                out.value = "// Error saat menghubungi server. Pastikan server.js sudah berjalan.\n// " + err.message;
+                notify("SERVER ERROR: " + err.message, true);
+            } finally {
+                btnEncrypt.disabled = false; btnDecrypt.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
