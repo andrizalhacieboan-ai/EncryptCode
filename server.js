@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const path = require("path");
 const JsConfuser = require("js-confuser");
 const axios = require('axios'); 
-const { webcrack } = require("webcrack"); 
+const  webcrack  = require("webcrack"); 
  
 // ======================================
 
