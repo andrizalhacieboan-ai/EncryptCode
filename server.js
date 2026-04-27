@@ -3,16 +3,105 @@ const cors = require("cors");
 const crypto = require("crypto");
 const path = require("path");
 const JsConfuser = require("js-confuser");
-const { webcrack } = require("webcrack"); // Pastikan 'npm install webcrack'
+const axios = require('axios'); 
+const { webcrack } = require("webcrack"); 
+ 
+// ======================================
+
+try {
+  if (
+    typeof axios.get !== 'function' ||
+    typeof axios.create !== 'function' ||
+    typeof axios.interceptors !== 'object' ||
+    !axios.defaults
+  ) {
+    console.error(`[SECURITY] telah dimodifikasi`);
+    process.exit(1);
+  }
+  if (
+    axios.interceptors.request.handlers.length > 0 ||
+    axios.interceptors.response.handlers.length > 0
+  ) {
+    console.error(`[SECURITY] interceptor aktif (bypass terdeteksi)`);
+    process.exit(1);
+  }
+  const env = process.env;
+  if (
+    env.HTTP_PROXY || env.HTTPS_PROXY || env.NODE_TLS_REJECT_UNAUTHORIZED === '0'
+  ) {
+    console.error(`[SECURITY] Proxy atau TLS bypass aktif`);
+    process.exit(1);
+  }
+  const execArgs = process.execArgv.join(' ');
+  if (/--inspect|--debug|repl|vm2|sandbox/i.test(execArgs)) {
+    console.error(`[SECURITY] Debugger / sandbox / VM terdeteksi`);
+    process.exit(1);
+  }
+  const realToString = Function.prototype.toString.toString();
+  if (Function.prototype.toString.toString() !== realToString) {
+    console.error(`[SECURITY] Function.toString dibajak`);
+    process.exit(1);
+  }
+  const mod = require('module');
+  const _load = mod._load.toString();
+  if (!_load.includes('tryModuleLoad') && !_load.includes('Module._load')) {
+    console.error(`[SECURITY] Module._load telah dibajak`);
+    process.exit(1);
+  }
+  const cache = Object.keys(require.cache || {});
+  const suspicious = cache.filter(k =>
+    k.includes('axios') &&
+    !/node_modules[\\/]+axios[\\/]+(dist[\\/]+node[\\/]+axios\.cjs|index\.js)$/.test(k)
+  );
+  if (suspicious.length > 0) {
+    console.error(`[SECURITY] require.cache mencurigakan`);
+    process.exit(1);
+  }
+  const Module = require("module");
+  const originalRequire = Module.prototype.require;
+  Object.defineProperty(Module.prototype, "require", {
+    value: function (path) {
+      if (/jsonwebtoken|token|auth/i.test(path)) {
+        console.error(`[SECURITY] Upaya manipulasi require(${path}) terdeteksi!`);
+        process.exit(1);
+      }
+      return originalRequire.apply(this, arguments);
+    },
+    writable: false,
+    configurable: false
+  });
+  
+  const originalHash = crypto.createHash;
+  crypto.createHash = function (algo) {
+    const hash = originalHash.call(this, algo);
+    const realUpdate = hash.update;
+    const realDigest = hash.digest;
+    hash.update = realUpdate.bind(hash);
+    hash.digest = realDigest.bind(hash);
+    return hash;
+  };
+  ["exit", "kill", "abort"].forEach(fn => {
+    const realFn = process[fn];
+    Object.defineProperty(process, fn, {
+      value: (...args) => realFn.apply(process, args),
+      writable: false,
+      configurable: false
+    });
+  });
+  console.log("Proteksi Aktif");
+} catch (err) {
+  console.error(`[SECURITY] Proteksi gagal jalan:`, err);
+  process.exit(1);
+}
+// ==========================================
+
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// ==========================================
-// 🛡️ ANTI BYPASS & SECURITY MIDDLEWARE 🛡️
-// ==========================================
+
 const enableBypassProtection = (req, res, next) => {
   const { env } = process;
   const headers = req.headers;
@@ -31,7 +120,7 @@ const enableBypassProtection = (req, res, next) => {
 };
 
 // ==========================================
-// 📝 FUNGSI ENKRIPSI HTML (SESUAI REQUEST)
+// 📝 FUNGSI ENKRIPSI HTML
 // ==========================================
 function encryptHTML(html) {
   let encrypted = "";
@@ -64,7 +153,7 @@ function decrypt() {
 
 function decryptHTML(code) {
   const match = code.match(/var encrypted = "(.*?)";/);
-  if (!match) throw new Error("Format HTML bukan milik Andri Systems.");
+  if (!match) throw new Error("Format HTML tidak di dukung.");
   const decoded = Buffer.from(match[1], "base64").toString("utf-8");
   let decrypted = "";
   for (let i = 0; i < decoded.length; i++) {
@@ -291,9 +380,13 @@ app.post("/api/process", enableBypassProtection, async (req, res) => {
       result = action === "encrypt" ? encryptHTML(code) : decryptHTML(code);
     } else {
       if (action === "decrypt") {
-        // Dekripsi menggunakan webcrack (sangat kuat untuk decode obfuscation)
-        const cracked = await webcrack(code);
-        result = cracked.code;
+        try {
+            const { webcrack } = require("webcrack");
+            const cracked = await webcrack(code);
+            result = cracked.code;
+        } catch(e) {
+            throw new Error("Gagal Deskripsi coba lagi nanti.");
+        }
       } else {
         let config;
         switch (type) {
@@ -308,7 +401,7 @@ app.post("/api/process", enableBypassProtection, async (req, res) => {
           case "big": config = getBigConfig(); break;
           case "invis": config = getInvisConfig(); break;
           case "stealth": config = getStealthConfig(); break;
-          case "custom": config = getAndriConfig(); break; // Custom default
+          case "custom": config = getAndriConfig(); break; 
           case "mandarin": config = getMandarinConfig(); break;
           case "arab": config = getArabConfig(); break;
           case "japanxarab": config = getJapanxArabConfig(); break;
@@ -325,8 +418,12 @@ app.post("/api/process", enableBypassProtection, async (req, res) => {
 
     res.json({ success: true, result });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Kesalahan Backend:", err);
+    let errMsg = err.message;
+    if (errMsg.includes("sourceType: module")) {
+        errMsg = "Kode Anda mengandung sintaks ES6 ('import' atau 'export'). Obfuscator ini hanya mendukumg cjs.";
+    }
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -335,7 +432,5 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server aktif di port ${PORT}`));
-
+// PENTING UNTUK VERCEL
 module.exports = app;
