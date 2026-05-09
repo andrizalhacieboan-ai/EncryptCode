@@ -11,7 +11,7 @@
 "dev": "nodemon server.js"
 },
 "dependencies": {
- "axios": "^0.24.0",
+ "axios": "^1.6.2",
 "express": "^4.18.2",
 "cors": "^2.8.5",
 "js-confuser": "^1.6.0",
